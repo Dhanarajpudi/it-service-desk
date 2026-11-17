@@ -1,8 +1,8 @@
-# IT Service Desk – DevOps Practical (Q3 + Q4)
+# IT Service Desk 
 
 Flask ticketing app with SQLite persistence, Docker, Jenkins CI/CD, GitHub and AWS EC2.
 
-## 1. Local deployment on Mac
+## 1. Local deployment 
 
 Install/start Docker Desktop, then run:
 
