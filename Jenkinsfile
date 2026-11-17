@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'it-service-desk'
-        EC2_HOST = '18.189.186.173'
-        EC2_USER = 'ubuntu'
-    }
+    PATH+DOCKER = '/Applications/Docker.app/Contents/Resources/bin'
+    IMAGE_NAME = 'it-service-desk'
+    EC2_HOST = '18.189.186.173'
+    EC2_USER = 'ubuntu'
+}
 
     stages {
         stage('Checkout') {
