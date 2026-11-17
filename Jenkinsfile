@@ -1,12 +1,12 @@
+
 pipeline {
     agent any
 
     environment {
-    PATH+DOCKER = '/Applications/Docker.app/Contents/Resources/bin'
-    IMAGE_NAME = 'it-service-desk'
-    EC2_HOST = '18.189.186.173'
-    EC2_USER = 'ubuntu'
-}
+        IMAGE_NAME = 'it-service-desk'
+        EC2_HOST = '18.189.186.173'
+        EC2_USER = 'ubuntu'
+    }
 
     stages {
         stage('Checkout') {
@@ -28,13 +28,18 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --pull -t ${IMAGE_NAME}:${BUILD_NUMBER} .'
+                sh '''
+                    export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+                    docker build --pull -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                '''
             }
         }
 
         stage('Docker Smoke Test') {
             steps {
                 sh '''
+                    export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+
                     docker rm -f it-service-desk-smoke || true
 
                     docker run -d \
@@ -86,3 +91,4 @@ pipeline {
         }
     }
 }
+
