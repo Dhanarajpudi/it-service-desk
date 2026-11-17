@@ -5,14 +5,12 @@ pipeline {
         IMAGE_NAME = 'it-service-desk'
         EC2_HOST = '18.189.186.173'
         EC2_USER = 'ubuntu'
-        EC2_DIR = '/home/ubuntu/it-service-desk'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'git --version'
             }
         }
 
@@ -29,32 +27,30 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build --pull -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                '''
+                sh 'docker build --pull -t ${IMAGE_NAME}:${BUILD_NUMBER} .'
             }
         }
 
         stage('Docker Smoke Test') {
             steps {
                 sh '''
-                    docker rm -f it-service-desk-smoke >/dev/null 2>&1 || true
+                    docker rm -f it-service-desk-smoke || true
 
                     docker run -d \
-                      --name it-service-desk-smoke \
-                      -p 5002:5000 \
-                      ${IMAGE_NAME}:${BUILD_NUMBER}
-
-                    trap 'docker rm -f it-service-desk-smoke >/dev/null 2>&1 || true' EXIT
+                        --name it-service-desk-smoke \
+                        -p 5002:5000 \
+                        ${IMAGE_NAME}:${BUILD_NUMBER}
 
                     for i in $(seq 1 20); do
                         if curl -fsS http://127.0.0.1:5002/health; then
+                            docker rm -f it-service-desk-smoke
                             exit 0
                         fi
                         sleep 2
                     done
 
-                    echo "Smoke test failed"
+                    docker logs it-service-desk-smoke || true
+                    docker rm -f it-service-desk-smoke || true
                     exit 1
                 '''
             }
@@ -67,18 +63,12 @@ pipeline {
                         ssh -o StrictHostKeyChecking=accept-new \
                             -o ConnectTimeout=15 \
                             ${EC2_USER}@${EC2_HOST} \
-                            'cd /home/ubuntu/it-service-desk &&
+                            'cd ~/it-service-desk &&
                              git fetch origin &&
                              git reset --hard origin/main &&
                              sudo docker compose up -d --build &&
-                             for i in $(seq 1 20); do
-                               if curl -fsS http://localhost:5001/health\; then
-                                 exit 0
-                               fi
-                               sleep 2
-                             done &&
-                             echo "EC2 health check failed" &&
-                             exit 1'
+                             sleep 5 &&
+                             curl -fsS http://localhost:5001/health'
                     '''
                 }
             }
@@ -86,16 +76,12 @@ pipeline {
     }
 
     post {
-        always {
-            sh 'docker logs it-service-desk-smoke --tail 30 2>/dev/null || true'
-        }
-
         success {
             echo 'SUCCESS: IT Service Desk deployed to AWS EC2.'
         }
 
         failure {
-            echo 'FAILED: Check the Jenkins Console Output for details.'
+            echo 'FAILED: Check Console Output for the failed stage.'
         }
     }
 }
